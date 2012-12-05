@@ -1,0 +1,125 @@
+// namespacing
+if (!com) {
+    var com = {}
+}
+if (!com.modestmaps) {
+    com.modestmaps = {}
+}
+
+(function(MM) {
+    MM.HeatLayer = function(parent, locations, radius) {
+        this.parent = parent || document.createElement('canvas');
+        this.radius = radius || 50;
+        this._context = this.parent.getContext("2d");
+        this._context.canvas.width = window.innerWidth;
+        this._context.canvas.height = window.innerHeight;
+        this.locations = locations || [];
+    };
+    //this.parent = parent || document.createElement('div');
+    //this.parent.className;
+
+    MM.HeatLayer.prototype = {
+        locations: null,
+        draw: function() {
+            this._clearCanvas();
+
+
+            var intense = this._intensities(this.locations.map(function(location) {
+                return [this.map.locationPoint(location[0]), location[1]];
+            }));
+            this._drawIntensities(intense);
+
+            //for (var i = 0; i < this.locations.length; i++) {
+                //var point = this.map.locationPoint(this.locations[i][0]);
+                //this._drawPoint(point.x, point.y);
+                //// this._context.fillRect(point.x, point.y, 10, 10);
+            //}
+        },
+
+        _hsvToRgb: function(h, s, v) {
+            s = s || 1;
+            v = v || 1;
+            var r, g, b;
+
+            var i = Math.floor(h * 6);
+            var f = h * 6 - i;
+            var p = v * (1 - s);
+            var q = v * (1 - f * s);
+            var t = v * (1 - (1 - f) * s);
+
+            switch(i % 6){
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+
+            return [Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255)];
+        },
+
+        _distanceBetween: function(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2))
+        },
+
+
+        _scaleFactor: function(distance) {
+            if (distance < this.radius) {
+                return Math.E - Math.exp(distance / this.radius)
+            }
+        },
+
+        _intensities: function(locations) {
+            var intensities = new Array(this._context.canvas.width);
+            for (var i = 0; i < this._context.canvas.width; i++) {
+                intensities[i] = new Array(this._context.canvas.height);
+            }
+
+            for (var i = 0; i < locations.length; i++) {
+                var x = Math.floor(locations[i][0].x),
+                    y = Math.floor(locations[i][0].y);
+                for (var j = x - this.radius; j <= x + this.radius && j < this._context.canvas.width; j++) {
+                    for (var k = y - this.radius; k <= y + this.radius && k < this._context.canvas.height; k++) {
+                        var coeff = this._scaleFactor(this._distanceBetween(x, y, j, k));
+                        if (coeff) {
+                            var intensityDelta = coeff * locations[i][1];
+                            if (intensities[j][k]) {
+                                var newIntensity = intensities[j][k] + intensityDelta;
+                                newIntensity = newIntensity > 1 ? 1.0 : newIntensity;
+                                intensities[j][k] = newIntensity;
+                            } else {
+                                intensities[j][k] = intensityDelta;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return intensities;
+        },
+
+        _drawIntensities: function(intensities, a) {
+            var a = a || 0.5;
+            for (var i = 0; i < intensities.length; i++) {
+                for (var j = 0; j < intensities[j].length; j++) {
+                    if (intensities[i][j]) {
+                        this._drawPoint(i, j, intensities[i][j] * 360, '100%', '100%', intensities[i][j]);
+                    }
+                }
+            }
+        },
+
+        _drawPoint: function(x, y, h, s, l, a) {
+            this._context.fillStyle = "hsla(" + [h, s, l, a].join(', ') + ")";
+            this._context.fillRect(x, y, 1, 1);
+        },
+
+        _clearCanvas: function() {
+            this._context.clearRect(0, 0, document.width, document.height);
+        }
+
+    };
+
+
+})(com.modestmaps);

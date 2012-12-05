@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src='https://raw.github.com/modestmaps/modestmaps-js/master/modestmaps.js'></script>
+  <script src='/src/modestheat.js'></script>
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    #heat { position:absolute; top:0; bottom:0; width:100%; height:100%; margin:0px; }
+  </style>
+</head>
+<body>
+
+<div id='map'></div>
+<canvas id='heat'></div>
+<script>
+  var parent = 'map';
+  var template = new MM.Template('http://tile.openstreetmap.org/{Z}/{X}/{Y}.png');
+  var layer = new MM.Layer(template);
+  var map = new MM.Map(parent, layer);
+  var heatlayer = new MM.HeatLayer(document.getElementById('heat'), 
+    [
+        [new MM.Location(37.49, -122.72), 0.25],
+        [new MM.Location(37.49, -122.82), 0.25]
+    ]);
+  map.addLayer(heatlayer);
+  map.draw();
+</script>
+
+</body>
+</html>
